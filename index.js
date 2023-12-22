@@ -83,6 +83,84 @@ async function run() {
             res.send(result);
         });
 
+        app.get("/Alltask/:id", async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await AllTaskCollection.findOne(query);
+            if (result) {
+                res.send(result);
+            } else {
+                res.status(404).send("Review not found");
+            }
+        });
+
+        app.put("/AllTask/:taskId", async (req, res) => {
+            try {
+                const taskId = req.params.taskId;
+                const updatedTaskData = req.body;
+
+                if (
+                    !updatedTaskData.title ||
+                    !updatedTaskData.description ||
+                    !updatedTaskData.deadline ||
+                    !updatedTaskData.priority
+                ) {
+                    return res
+                        .status(400)
+                        .send({ message: "Incomplete task data provided" });
+                }
+
+                const query = { _id: new ObjectId(taskId) };
+                const update = {
+                    $set: {
+                        title: updatedTaskData.title,
+                        description: updatedTaskData.description,
+                        deadline: updatedTaskData.deadline,
+                        priority: updatedTaskData.priority,
+                    },
+                };
+
+                const result = await AllTaskCollection.updateOne(query, update);
+
+                if (result.modifiedCount === 1) {
+                    res.send({ message: "Task updated successfully" });
+                } else {
+                    res.status(404).send({
+                        message: "Task not found or no modifications made",
+                    });
+                }
+            } catch (error) {
+                console.error("Error updating task:", error);
+                res.status(500).send({ message: "Internal server error" });
+            }
+        });
+
+        // app.put("/AllTask/status", async (req, res) => {
+        //     try {
+        //         const { taskId, status } = req.body;
+        //         const query = { _id: new ObjectId(taskId) };
+        //         const update = { $set: { status } };
+        //         const result = await AllTaskCollection.updateOne(query, update);
+
+        //         if (result.modifiedCount === 1) {
+        //             res.send({ message: "Task status updated successfully" });
+        //         } else {
+        //             res.status(500).send({
+        //                 message: "Failed to update task status",
+        //             });
+        //         }
+        //     } catch (error) {
+        //         console.error("Error updating task status:", error);
+        //         res.status(500).send({ message: "Internal server error" });
+        //     }
+        // });
+
+        // Error handler middleware
+        app.use((err, req, res, next) => {
+            console.error(err.stack);
+            res.status(500).send("Something went wrong!");
+        });
+
         // ---------------------------------------
 
         await client.db("admin").command({ ping: 1 });
